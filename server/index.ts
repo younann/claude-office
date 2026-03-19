@@ -1,6 +1,11 @@
 import express from "express";
 import cors from "cors";
-import { getAllSessions, getSessionById } from "./services/sessionScanner.js";
+import {
+  getAllSessions,
+  getSessionById,
+  saveNote,
+  deleteNote,
+} from "./services/sessionScanner.js";
 
 const app = express();
 const PORT = 3001;
@@ -8,7 +13,7 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// GET /api/sessions — list all sessions (without recentActivity)
+// GET /api/sessions — list all sessions (lighter payload)
 app.get("/api/sessions", async (req, res) => {
   try {
     const sessions = await getAllSessions();
@@ -21,8 +26,10 @@ app.get("/api/sessions", async (req, res) => {
       filtered = sessions.filter((s) => statusFilter.includes(s.status));
     }
 
-    // Strip recentActivity for list endpoint
-    const summary = filtered.map(({ recentActivity, ...rest }) => rest);
+    // Strip heavy fields for list endpoint
+    const summary = filtered.map(
+      ({ recentActivity, conversationPreview, ...rest }) => rest
+    );
     res.json(summary);
   } catch (error) {
     console.error("Error fetching sessions:", error);
@@ -42,6 +49,36 @@ app.get("/api/sessions/:id", async (req, res) => {
   } catch (error) {
     console.error("Error fetching session:", error);
     res.status(500).json({ error: "Failed to fetch session" });
+  }
+});
+
+// POST /api/sessions/:id/notes — add a note
+app.post("/api/sessions/:id/notes", async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || typeof text !== "string") {
+      res.status(400).json({ error: "text is required" });
+      return;
+    }
+    const notes = await saveNote(req.params.id, text.slice(0, 500));
+    res.json(notes);
+  } catch (error) {
+    console.error("Error saving note:", error);
+    res.status(500).json({ error: "Failed to save note" });
+  }
+});
+
+// DELETE /api/sessions/:id/notes/:index — delete a note
+app.delete("/api/sessions/:id/notes/:index", async (req, res) => {
+  try {
+    const notes = await deleteNote(
+      req.params.id,
+      parseInt(req.params.index, 10)
+    );
+    res.json(notes);
+  } catch (error) {
+    console.error("Error deleting note:", error);
+    res.status(500).json({ error: "Failed to delete note" });
   }
 });
 

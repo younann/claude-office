@@ -179,6 +179,7 @@ function App() {
         <OfficeDetail
           session={selectedSession}
           onClose={() => selectSession(null)}
+          onRefresh={() => { refresh(); if (selectedId) selectSession(selectedId); }}
         />
       )}
     </div>

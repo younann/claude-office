@@ -433,6 +433,20 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
           )}
         </div>
 
+        {/* === ERROR ALERT OVERLAY === */}
+        {session.errorCount > 0 && (
+          <div className="absolute top-2 left-2 px-2 py-1" style={{
+            background: "#ff222288",
+            border: "2px solid #ff4444",
+            boxShadow: "2px 2px 0 #0a0a1a",
+            animation: "status-blink 2s steps(2) infinite",
+          }}>
+            <span style={{ fontFamily: "var(--font-pixel)", fontSize: "5px", color: "#fff" }}>
+              {session.errorCount} ERROR{session.errorCount > 1 ? "S" : ""}
+            </span>
+          </div>
+        )}
+
         {/* === CONFETTI === */}
         {showConfetti && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -493,7 +507,7 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
           </div>
         </div>
 
-        {/* XP bar + mood */}
+        {/* Stats row: mood + XP bar + errors + cost */}
         <div className="flex items-center gap-2">
           <span style={{
             fontFamily: "var(--font-body)",
@@ -513,6 +527,28 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
               transition: "width 0.5s",
             }} />
           </div>
+
+          {/* Error count badge */}
+          {session.errorCount > 0 && (
+            <span style={{
+              fontFamily: "var(--font-pixel)", fontSize: "5px",
+              color: "#ff4444", background: "#ff444433",
+              padding: "1px 3px",
+            }}>
+              !{session.errorCount}
+            </span>
+          )}
+
+          {/* Cost */}
+          {session.tokenUsage && session.tokenUsage.estimatedCostUsd > 0 && (
+            <span style={{
+              fontFamily: "var(--font-body)", fontSize: "11px",
+              color: session.tokenUsage.estimatedCostUsd > 1 ? "#fbbf24" : "#606080",
+            }}>
+              ${session.tokenUsage.estimatedCostUsd.toFixed(2)}
+            </span>
+          )}
+
           <span style={{
             fontFamily: "var(--font-body)",
             fontSize: "11px",
@@ -521,6 +557,15 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
             {formatRelativeTime(session.lastActivityAt)}
           </span>
         </div>
+
+        {/* Notes indicator */}
+        {session.notes && session.notes.length > 0 && (
+          <div className="mt-1 flex items-center gap-1">
+            <span style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "#fcd34d" }}>
+              {session.notes[session.notes.length - 1].text.slice(0, 40)}{session.notes[session.notes.length - 1].text.length > 40 ? "..." : ""}
+            </span>
+          </div>
+        )}
       </div>
     </button>
   );
