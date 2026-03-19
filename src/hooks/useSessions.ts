@@ -62,6 +62,15 @@ export function useSessions() {
 
         const identity = getAgentIdentity(session.id, session.project);
 
+        // Agent needs command approval (URGENT)
+        if (prev.status !== "approval" && session.status === "approval") {
+          sendNotification(
+            `APPROVE: ${identity.funnyName} needs permission!`,
+            `${identity.displayName} is waiting for you to approve a command. Switch to the terminal!`,
+            `approval-${session.id}`
+          );
+        }
+
         // Agent went from working → waiting (needs your input)
         if (prev.status === "working" && session.status === "waiting") {
           sendNotification(
@@ -187,6 +196,7 @@ export function useSessions() {
     all: sessions.length,
     working: sessions.filter((s) => s.status === "working").length,
     waiting: sessions.filter((s) => s.status === "waiting").length,
+    approval: sessions.filter((s) => s.status === "approval").length,
     idle: sessions.filter((s) => s.status === "idle").length,
     stopped: sessions.filter((s) => s.status === "stopped").length,
   };

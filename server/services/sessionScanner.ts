@@ -91,13 +91,23 @@ export async function getAllSessions(): Promise<Session[]> {
   return sessions;
 }
 
-function deriveActiveStatus(session: Session): SessionStatus {
+function deriveActiveStatus(session: Session & { _pendingToolCall?: string | null; _pendingToolCallTimestamp?: string | null }): SessionStatus {
   const lastActivityTime = session.lastActivityAt
     ? new Date(session.lastActivityAt).getTime()
     : 0;
   const timeSinceActivity = Date.now() - lastActivityTime;
 
   if (timeSinceActivity > IDLE_THRESHOLD_MS) return "idle";
+
+  // Check if there's a pending tool call awaiting approval
+  // If tool_use was sent but no tool_result came back, and >3s passed → approval needed
+  if (session._pendingToolCall && session._pendingToolCallTimestamp) {
+    const pendingTime = Date.now() - new Date(session._pendingToolCallTimestamp).getTime();
+    if (pendingTime > 3000) {
+      return "approval";
+    }
+  }
+
   if (timeSinceActivity < 30_000) return "working";
 
   const lastActivity = session.recentActivity[session.recentActivity.length - 1];
@@ -256,6 +266,11 @@ async function parseSessionFile(
     const recentActivity: Activity[] = [];
     const conversationPreview: MessagePreview[] = [];
 
+    // Track if last entry is a tool_call awaiting approval
+    // (tool_use with no subsequent tool_result)
+    let pendingToolCall: string | null = null;
+    let pendingToolCallTimestamp: string | null = null;
+
     // Token tracking
     let inputTokens = 0;
     let outputTokens = 0;
@@ -325,12 +340,16 @@ async function parseSessionFile(
           );
           for (const toolUseBlock of toolUseBlocks) {
             toolCallCount++;
-            const toolSummary = `${toolUseBlock.name || "Tool"}: ${JSON.stringify(toolUseBlock.input || {}).slice(0, 100)}`;
+            const toolName = toolUseBlock.name || "Tool";
+            const toolSummary = `${toolName}: ${JSON.stringify(toolUseBlock.input || {}).slice(0, 100)}`;
             recentActivity.push({
               type: "tool_call",
               summary: toolSummary,
               timestamp: timestamp || "",
             });
+            // Mark as pending (will be cleared if tool_result follows)
+            pendingToolCall = toolName;
+            pendingToolCallTimestamp = timestamp || null;
           }
         } else if (typeof contentArr === "string") {
           text = contentArr;
@@ -353,6 +372,10 @@ async function parseSessionFile(
           });
         }
       } else if (entry.type === "tool_result") {
+        // Clear pending — the tool got a result (was approved and ran)
+        pendingToolCall = null;
+        pendingToolCallTimestamp = null;
+
         // Check for errors in tool results
         const isError = entry.is_error === true ||
           (typeof entry.content === "string" && /error|Error|ERROR|FAIL/.test(entry.content));
@@ -413,7 +436,10 @@ async function parseSessionFile(
       },
       gitInfo: { branch: gitBranch, uncommittedChanges: 0, aheadBehind: null },
       notes: [],
-    };
+      // Internal fields for status derivation (not sent to client)
+      _pendingToolCall: pendingToolCall,
+      _pendingToolCallTimestamp: pendingToolCallTimestamp,
+    } as any;
   } catch {
     return null;
   }

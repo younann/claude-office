@@ -1,4 +1,4 @@
-export type SessionStatus = "working" | "waiting" | "idle" | "stopped";
+export type SessionStatus = "working" | "waiting" | "approval" | "idle" | "stopped";
 
 export interface MessagePreview {
   role: "user" | "assistant";

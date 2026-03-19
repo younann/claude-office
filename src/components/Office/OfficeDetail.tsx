@@ -98,10 +98,10 @@ export function OfficeDetail({ session, onClose, onRefresh }: OfficeDetailProps)
   const [isSaving, setIsSaving] = useState(false);
 
   const statusColors: Record<string, string> = {
-    working: "#34d399", waiting: "#fbbf24", idle: "#60a5fa", stopped: "#f87171",
+    working: "#34d399", waiting: "#fbbf24", approval: "#ff44ff", idle: "#60a5fa", stopped: "#f87171",
   };
   const statusLabels: Record<string, string> = {
-    working: "WORKING HARD", waiting: "WAITING", idle: "NAPPING", stopped: "OFFLINE",
+    working: "WORKING HARD", waiting: "WAITING", approval: "NEEDS APPROVAL!", idle: "NAPPING", stopped: "OFFLINE",
   };
 
   const token = session.tokenUsage;

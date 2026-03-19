@@ -62,6 +62,11 @@ function App() {
               marginTop: "2px",
             }}>
               {statusCounts.all} agents on floor
+              {statusCounts.approval > 0 && (
+                <span style={{ color: "#ff44ff", animation: "status-blink 0.8s steps(2) infinite" }}>
+                  {" "}&bull; {statusCounts.approval} NEED APPROVAL
+                </span>
+              )}
               {statusCounts.working > 0 && (
                 <span style={{ color: "#34d399" }}> &bull; {statusCounts.working} active</span>
               )}

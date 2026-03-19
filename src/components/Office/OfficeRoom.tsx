@@ -34,6 +34,7 @@ function getWorkerAppearance(sessionId: string) {
 const statusConfig: Record<string, { label: string; color: string }> = {
   working: { label: "WORKING", color: "#34d399" },
   waiting: { label: "WAITING", color: "#fbbf24" },
+  approval: { label: "APPROVE ME!", color: "#ff44ff" },
   idle: { label: "SLEEPING", color: "#60a5fa" },
   stopped: { label: "OFFLINE", color: "#f87171" },
 };
@@ -433,8 +434,31 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
           )}
         </div>
 
+        {/* === APPROVAL ALERT OVERLAY === */}
+        {session.status === "approval" && (
+          <>
+            {/* Flashing border overlay */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              border: "3px solid #ff44ff",
+              animation: "status-blink 0.8s steps(2) infinite",
+              boxShadow: "inset 0 0 30px #ff44ff22, 0 0 15px #ff44ff33",
+            }} />
+            {/* Big center badge */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-2 z-10" style={{
+              background: "#ff44ffcc",
+              border: "3px solid #fff",
+              boxShadow: "4px 4px 0 #0a0a1a, 0 0 20px #ff44ff66",
+              animation: "status-blink 0.6s steps(2) infinite",
+            }}>
+              <span style={{ fontFamily: "var(--font-pixel)", fontSize: "8px", color: "#fff", letterSpacing: "1px" }}>
+                APPROVE ME!
+              </span>
+            </div>
+          </>
+        )}
+
         {/* === ERROR ALERT OVERLAY === */}
-        {session.errorCount > 0 && (
+        {session.errorCount > 0 && session.status !== "approval" && (
           <div className="absolute top-2 left-2 px-2 py-1" style={{
             background: "#ff222288",
             border: "2px solid #ff4444",
