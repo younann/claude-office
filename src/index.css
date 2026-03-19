@@ -1,129 +1,136 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-main: #05060a;
-  --color-bg-sidebar: #080a10;
-  --color-bg-card: #0c0e16;
-  --color-bg-card-hover: #10131d;
-  --color-border-subtle: #141824;
-  --color-border-visible: #1c2236;
-  --color-border-glow: #00f0ff15;
-  --color-text-primary: #c8d6e5;
-  --color-text-secondary: #5a6a82;
-  --color-text-muted: #2a3448;
-  --color-accent: #00f0ff;
-  --color-accent-dim: #00f0ff30;
-  --color-accent-secondary: #ff3e8a;
-  --color-status-working: #00ff88;
-  --color-status-waiting: #ffaa00;
-  --color-status-idle: #4488ff;
-  --color-status-stopped: #ff2244;
-  --font-display: 'Orbitron', monospace;
+  --color-bg-main: #1a1b2e;
+  --color-bg-floor: #222440;
+  --color-bg-wall: #2a2d4a;
+  --color-bg-card: #1e2038;
+  --color-border-subtle: #2e3155;
+  --color-text-primary: #e0e2f0;
+  --color-text-secondary: #8888aa;
+  --color-text-muted: #555577;
+  --color-accent: #6c5ce7;
+  --color-warm: #ffeaa7;
+  --color-status-working: #00b894;
+  --color-status-waiting: #fdcb6e;
+  --color-status-idle: #74b9ff;
+  --font-display: 'Nunito', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --font-body: 'Exo 2', sans-serif;
+  --font-body: 'Nunito', sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
-  background-color: var(--color-bg-main);
+  background: linear-gradient(180deg, #12132a 0%, #1a1b2e 50%, #1e1f35 100%);
   color: var(--color-text-primary);
   font-family: var(--font-body);
   margin: 0;
   min-height: 100vh;
-  overflow: hidden;
 }
 
-/* Scanline overlay */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 240, 255, 0.008) 2px,
-    rgba(0, 240, 255, 0.008) 4px
-  );
-  pointer-events: none;
-  z-index: 9999;
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2e3155; border-radius: 3px; }
+
+/* ===== Worker Animations ===== */
+
+/* Typing worker — bobbing + hands moving */
+@keyframes worker-typing {
+  0%, 100% { transform: translateY(0px); }
+  15% { transform: translateY(-1px); }
+  30% { transform: translateY(0px); }
+  45% { transform: translateY(-1px); }
+  60% { transform: translateY(0px); }
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-border-visible);
-  border-radius: 2px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent-dim);
+@keyframes hands-typing {
+  0%, 100% { transform: translateX(0px); }
+  25% { transform: translateX(2px); }
+  50% { transform: translateX(-1px); }
+  75% { transform: translateX(1px); }
 }
 
-/* Glow keyframes */
-@keyframes pulse-working {
-  0%, 100% { box-shadow: 0 0 8px #00ff8844, 0 0 20px #00ff8822; }
-  50% { box-shadow: 0 0 16px #00ff8888, 0 0 40px #00ff8844; }
+@keyframes screen-flicker {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; }
+  75% { opacity: 0.85; }
 }
 
-@keyframes pulse-waiting {
-  0%, 100% { box-shadow: 0 0 8px #ffaa0044, 0 0 20px #ffaa0022; }
-  50% { box-shadow: 0 0 16px #ffaa0088, 0 0 40px #ffaa0044; }
+/* Waiting worker — looking around */
+@keyframes worker-waiting {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  75% { transform: rotate(-5deg); }
+  85% { transform: rotate(5deg); }
+  95% { transform: rotate(0deg); }
 }
 
-@keyframes pulse-idle {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
+@keyframes look-around {
+  0%, 40%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+  70% { transform: translateX(-2px); }
 }
 
-@keyframes scan-line {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
+/* Idle worker — sleeping Z's */
+@keyframes worker-idle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(1px) rotate(2deg); }
 }
 
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes float-z {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: translate(10px, -20px) scale(1); }
 }
 
-@keyframes glow-border {
-  0%, 100% { border-color: var(--color-accent-dim); }
-  50% { border-color: var(--color-accent); }
+@keyframes float-z-2 {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  50% { opacity: 0.7; }
+  100% { opacity: 0; transform: translate(14px, -26px) scale(0.9); }
 }
 
-@keyframes typing-cursor {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+/* Coffee steam */
+@keyframes steam {
+  0% { opacity: 0; transform: translateY(0) scaleX(1); }
+  50% { opacity: 0.6; transform: translateY(-6px) scaleX(1.2); }
+  100% { opacity: 0; transform: translateY(-14px) scaleX(0.8); }
 }
 
-@keyframes data-stream {
-  0% { background-position: 0% 0%; }
-  100% { background-position: 0% 100%; }
+/* Desk lamp glow */
+@keyframes lamp-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
 }
 
-.animate-fade-in-up {
-  animation: fade-in-up 0.4s ease-out both;
+/* Subtle card entrance */
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.animate-pulse-working {
-  animation: pulse-working 2s ease-in-out infinite;
+/* Walking */
+@keyframes walk-right {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(8px); }
+  100% { transform: translateX(0); }
 }
 
-.animate-pulse-waiting {
-  animation: pulse-waiting 3s ease-in-out infinite;
+@keyframes leg-walk {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(15deg); }
+  75% { transform: rotate(-15deg); }
 }
 
-.animate-pulse-idle {
-  animation: pulse-idle 4s ease-in-out infinite;
+/* Phone check for waiting */
+@keyframes phone-check {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  65% { transform: rotate(-10deg) translateY(-2px); }
+  80% { transform: rotate(-10deg) translateY(-2px); }
+  85% { transform: rotate(0deg); }
 }
 
-.animate-glow-border {
-  animation: glow-border 2s ease-in-out infinite;
+/* Status indicator pulse */
+@keyframes status-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.8); opacity: 0; }
 }
