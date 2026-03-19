@@ -86,6 +86,12 @@ function deriveActiveStatus(session: Session): SessionStatus {
     return "idle";
   }
 
+  // If activity was very recent (< 30s), the agent is likely working
+  // (the assistant message we see may be mid-stream before the next tool call)
+  if (timeSinceActivity < 30_000) {
+    return "working";
+  }
+
   // Check last activity type from recentActivity
   const lastActivity = session.recentActivity[session.recentActivity.length - 1];
   if (

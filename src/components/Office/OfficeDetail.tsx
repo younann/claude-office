@@ -1,40 +1,69 @@
 import type { Session, Activity } from "../../types";
 import { getAgentIdentity } from "../../utils/agentIdentity";
 import { formatRelativeTime, formatDuration } from "../../utils/formatTime";
+import { Worker } from "./Worker";
 
-const typeConfig: Record<string, { icon: string; color: string; label: string }> = {
-  user: { icon: "\ud83d\udcac", color: "#00b894", label: "You" },
-  assistant: { icon: "\ud83e\udd16", color: "#6c5ce7", label: "Agent" },
-  tool_call: { icon: "\ud83d\udee0", color: "#e17055", label: "Tool" },
-  tool_result: { icon: "\ud83d\udccb", color: "#fdcb6e", label: "Result" },
+function getWorkerAppearance(sessionId: string) {
+  let hash = 0;
+  for (let i = 0; i < sessionId.length; i++) {
+    hash = (hash << 5) - hash + sessionId.charCodeAt(i);
+    hash |= 0;
+  }
+  hash = Math.abs(hash);
+  const skins = ["#f5cba7", "#e8b88a", "#d4a574", "#c49060", "#fde3cd", "#dbb99b"];
+  const shirts = ["#6c5ce7", "#00b894", "#e17055", "#0984e3", "#fd79a8", "#00cec9", "#a29bfe", "#e84393", "#2ecc71", "#f39c12"];
+  const hairs = ["#2d3436", "#5d4037", "#f9a825", "#d63031", "#1e272e", "#e8d5b7", "#784212", "#b33939"];
+  const pants = ["#2d3436", "#34495e", "#2c3e50", "#1a1a2e", "#2e4057"];
+  return {
+    skinColor: skins[hash % skins.length],
+    shirtColor: shirts[(hash >> 4) % shirts.length],
+    hairColor: hairs[(hash >> 8) % hairs.length],
+    pantsColor: pants[(hash >> 16) % pants.length],
+  };
+}
+
+const typeConfig: Record<string, { color: string; label: string }> = {
+  user: { color: "#34d399", label: "YOU" },
+  assistant: { color: "#a78bfa", label: "AGT" },
+  tool_call: { color: "#f87171", label: "CMD" },
+  tool_result: { color: "#fbbf24", label: "RES" },
 };
 
 function ActivityLine({ activity, index }: { activity: Activity; index: number }) {
   const config = typeConfig[activity.type] || typeConfig.assistant;
   return (
-    <div
-      className="flex gap-3 items-start py-2 border-b border-[#2a2d50]/50 last:border-0"
-      style={{ animation: `card-enter 0.3s ease-out ${index * 40}ms both` }}
-    >
-      <span
-        className="text-[9px] min-w-[40px] pt-1 text-right shrink-0"
-        style={{ fontFamily: "var(--font-mono)", color: "#444466" }}
-      >
+    <div className="flex gap-2 items-start py-1.5" style={{
+      borderBottom: "1px solid #1a1a35",
+      animation: `card-enter 0.2s ease-out ${index * 30}ms both`,
+    }}>
+      <span style={{
+        fontFamily: "var(--font-body)",
+        fontSize: "13px",
+        color: "#404060",
+        minWidth: "44px",
+        textAlign: "right",
+      }}>
         {formatRelativeTime(activity.timestamp)}
       </span>
-      <span
-        className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
-        style={{
-          color: config.color,
-          background: `${config.color}15`,
-        }}
-      >
-        {config.icon} {config.label}
+      <span style={{
+        fontFamily: "var(--font-pixel)",
+        fontSize: "6px",
+        color: config.color,
+        background: config.color + "22",
+        padding: "2px 4px",
+        minWidth: "28px",
+        textAlign: "center",
+        lineHeight: "14px",
+      }}>
+        {config.label}
       </span>
-      <span
-        className="text-[11px] leading-relaxed"
-        style={{ fontFamily: "var(--font-mono)", color: "#8888aa" }}
-      >
+      <span style={{
+        fontFamily: "var(--font-body)",
+        fontSize: "14px",
+        color: "#a0a0c0",
+        lineHeight: "1.3",
+        wordBreak: "break-all",
+      }}>
         {activity.summary}
       </span>
     </div>
@@ -48,126 +77,182 @@ interface OfficeDetailProps {
 
 export function OfficeDetail({ session, onClose }: OfficeDetailProps) {
   const identity = getAgentIdentity(session.id, session.project);
+  const worker = getWorkerAppearance(session.id);
 
   const statusColors: Record<string, string> = {
-    working: "#00b894",
-    waiting: "#fdcb6e",
-    idle: "#74b9ff",
-    stopped: "#ff7675",
+    working: "#34d399", waiting: "#fbbf24", idle: "#60a5fa", stopped: "#f87171",
   };
-
   const statusLabels: Record<string, string> = {
-    working: "Working hard",
-    waiting: "Waiting for you",
-    idle: "Taking a nap",
-    stopped: "Left the office",
+    working: "WORKING HARD", waiting: "WAITING FOR INPUT", idle: "TAKING A NAP", stopped: "LEFT THE OFFICE",
   };
 
   const stats = [
-    { icon: "\u23f1", label: "Uptime", value: formatDuration(session.startedAt) },
-    { icon: "\ud83d\udcac", label: "Messages", value: String(session.messageCount) },
-    { icon: "\ud83d\udee0", label: "Tools Used", value: String(session.toolCallCount) },
-    { icon: "\ud83d\udd53", label: "Last Active", value: formatRelativeTime(session.lastActivityAt) },
+    { label: "TIME", value: formatDuration(session.startedAt), color: "#fcd34d" },
+    { label: "MSGS", value: String(session.messageCount), color: "#a78bfa" },
+    { label: "TOOLS", value: String(session.toolCallCount), color: "#f87171" },
+    { label: "LAST", value: formatRelativeTime(session.lastActivityAt), color: "#34d399" },
   ];
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-8"
-      style={{ background: "#000000aa", backdropFilter: "blur(8px)" }}
+      style={{ background: "#000000cc" }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
         style={{
-          background: "linear-gradient(180deg, #1e2045, #1a1c38)",
-          border: `1px solid ${identity.accentColor}33`,
-          boxShadow: `0 24px 64px #000000aa, 0 0 40px ${identity.accentColor}11`,
-          animation: "card-enter 0.3s ease-out both",
+          background: "#1a1a2e",
+          border: "4px solid #3a3a6a",
+          boxShadow: "8px 8px 0 #0a0a1a, inset -2px -2px 0 #0f0f23, inset 2px 2px 0 #2a2a5a",
+          animation: "bounce-in 0.3s ease-out both",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[#2a2d50] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-              style={{
-                background: `linear-gradient(135deg, ${identity.gradientFrom}22, ${identity.gradientTo}11)`,
-                border: `1px solid ${identity.gradientFrom}44`,
-                color: identity.gradientFrom,
-              }}
-            >
-              {identity.icon}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold" style={{ color: "#e0e2f0" }}>
-                  {identity.displayName}
-                </h2>
-                <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{
-                    color: statusColors[session.status],
-                    background: `${statusColors[session.status]}20`,
-                  }}
-                >
-                  {statusLabels[session.status]}
-                </span>
-              </div>
-              <div
-                className="text-[10px] mt-0.5"
-                style={{ fontFamily: "var(--font-mono)", color: "#555577" }}
-              >
-                {identity.codename} &middot; {session.projectPath}
-                {session.gitBranch && <> &middot; <span style={{ color: "#6c5ce7" }}>{session.gitBranch}</span></>}
-              </div>
-            </div>
-          </div>
+        {/* Title bar — game window style */}
+        <div className="flex items-center justify-between px-4 py-2" style={{
+          background: "#7c3aed",
+          boxShadow: "inset -2px -2px 0 #5b2db8, inset 2px 2px 0 #9d5cf5",
+        }}>
+          <span style={{
+            fontFamily: "var(--font-pixel)",
+            fontSize: "8px",
+            color: "#fff",
+            letterSpacing: "1px",
+          }}>
+            AGENT: {identity.displayName}
+          </span>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors hover:bg-[#2a2d50]"
-            style={{ color: "#555577", border: "1px solid #2a2d50" }}
+            className="cursor-pointer"
+            style={{
+              fontFamily: "var(--font-pixel)",
+              fontSize: "8px",
+              color: "#fff",
+              background: "#e74c3c",
+              width: "20px",
+              height: "20px",
+              border: "none",
+              boxShadow: "inset -2px -2px 0 #c0392b, inset 2px 2px 0 #ff6b6b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            ✕
+            X
           </button>
         </div>
 
-        {/* Stats */}
-        <div className="px-6 py-4 grid grid-cols-4 gap-3 border-b border-[#2a2d50]">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-xl p-3 text-center"
-              style={{ background: "#16182e" }}
-            >
-              <div className="text-lg mb-1">{stat.icon}</div>
-              <div className="text-base font-bold" style={{ color: "#e0e2f0" }}>
-                {stat.value}
+        {/* Agent profile */}
+        <div className="flex items-center gap-4 px-5 py-4" style={{
+          borderBottom: "2px solid #2e2e5e",
+        }}>
+          {/* Worker sprite */}
+          <div className="shrink-0" style={{
+            background: "#12122a",
+            padding: "8px",
+            border: "2px solid #2e2e5e",
+            boxShadow: "inset -2px -2px 0 #0a0a1a",
+          }}>
+            <Worker
+              status={session.status}
+              skinColor={worker.skinColor}
+              shirtColor={worker.shirtColor}
+              hairColor={worker.hairColor}
+              pantsColor={worker.pantsColor}
+            />
+          </div>
+
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-1">
+              <span style={{
+                fontFamily: "var(--font-pixel)",
+                fontSize: "10px",
+                color: "#e8e8f0",
+              }}>
+                {identity.codename}
+              </span>
+              <span style={{
+                fontFamily: "var(--font-pixel)",
+                fontSize: "6px",
+                color: statusColors[session.status],
+                background: statusColors[session.status] + "22",
+                padding: "3px 6px",
+                letterSpacing: "0.5px",
+              }}>
+                {statusLabels[session.status]}
+              </span>
+            </div>
+            <div style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "15px",
+              color: "#606080",
+            }}>
+              {session.projectPath}
+              {session.gitBranch && <span style={{ color: "#7c3aed" }}> [{session.gitBranch}]</span>}
+            </div>
+            {session.model && (
+              <div style={{
+                fontFamily: "var(--font-body)",
+                fontSize: "13px",
+                color: "#404060",
+                marginTop: "2px",
+              }}>
+                Model: {session.model}
               </div>
-              <div className="text-[9px] mt-0.5" style={{ color: "#555577" }}>
+            )}
+          </div>
+        </div>
+
+        {/* Stats bar — RPG style */}
+        <div className="grid grid-cols-4 gap-0" style={{ borderBottom: "2px solid #2e2e5e" }}>
+          {stats.map((stat) => (
+            <div key={stat.label} className="px-3 py-3 text-center" style={{
+              borderRight: "1px solid #2e2e5e",
+            }}>
+              <div style={{
+                fontFamily: "var(--font-pixel)",
+                fontSize: "6px",
+                color: "#606080",
+                letterSpacing: "1px",
+                marginBottom: "4px",
+              }}>
                 {stat.label}
+              </div>
+              <div style={{
+                fontFamily: "var(--font-pixel)",
+                fontSize: "10px",
+                color: stat.color,
+                textShadow: `0 0 8px ${stat.color}44`,
+              }}>
+                {stat.value}
               </div>
             </div>
           ))}
         </div>
 
         {/* Activity log */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          <h3
-            className="text-[10px] tracking-wider uppercase font-bold mb-3"
-            style={{ color: "#555577" }}
-          >
-            Activity Log — {(session.recentActivity || []).length} entries
-          </h3>
+        <div className="flex-1 overflow-y-auto px-4 py-3">
+          <div className="mb-2" style={{
+            fontFamily: "var(--font-pixel)",
+            fontSize: "7px",
+            color: "#606080",
+            letterSpacing: "1px",
+          }}>
+            ACTIVITY LOG [{(session.recentActivity || []).length}]
+          </div>
           {(session.recentActivity || []).length === 0 ? (
-            <div className="py-8 text-center" style={{ color: "#444466" }}>
-              <div className="text-2xl mb-2">🤫</div>
-              <div className="text-xs">No recent activity</div>
+            <div className="py-8 text-center" style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "16px",
+              color: "#404060",
+            }}>
+              No recent activity recorded
             </div>
           ) : (
             <div>
-              {[...(session.recentActivity || [])].reverse().map((activity, i) => (
-                <ActivityLine key={i} activity={activity} index={i} />
+              {[...(session.recentActivity || [])].reverse().map((a, i) => (
+                <ActivityLine key={i} activity={a} index={i} />
               ))}
             </div>
           )}
