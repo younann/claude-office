@@ -1,31 +1,66 @@
 import type { Activity } from "../../types";
 import { formatRelativeTime } from "../../utils/formatTime";
 
-const typeConfig: Record<string, { icon: string; color: string }> = {
-  user: { icon: "\ud83d\udc64", color: "bg-green-900/30 text-green-300" },
-  assistant: { icon: "\ud83e\udd16", color: "bg-bg-card text-text-primary" },
-  tool_call: { icon: "\ud83d\udd27", color: "bg-accent/10 text-purple-300" },
-  tool_result: {
-    icon: "\ud83d\udccb",
-    color: "bg-bg-card text-text-secondary",
-  },
+const typeConfig: Record<
+  string,
+  { icon: string; color: string; label: string }
+> = {
+  user: { icon: "\u25B6", color: "#00ff88", label: "USR" },
+  assistant: { icon: "\u25C6", color: "#00f0ff", label: "AGT" },
+  tool_call: { icon: "\u2699", color: "#ff3e8a", label: "CMD" },
+  tool_result: { icon: "\u25C8", color: "#ffaa00", label: "RES" },
 };
 
 interface ActivityItemProps {
   activity: Activity;
+  index: number;
 }
 
-export function ActivityItem({ activity }: ActivityItemProps) {
+export function ActivityItem({ activity, index }: ActivityItemProps) {
   const config = typeConfig[activity.type] || typeConfig.assistant;
+
   return (
-    <div className="flex gap-2 items-start">
-      <span className="text-accent text-[9px] min-w-[36px] pt-0.5 shrink-0">
+    <div
+      className="flex gap-3 items-start py-1.5 animate-fade-in-up"
+      style={{ animationDelay: `${index * 30}ms` }}
+    >
+      {/* Timestamp */}
+      <span
+        className="text-[9px] min-w-[44px] pt-0.5 shrink-0 text-right"
+        style={{
+          fontFamily: "var(--font-mono)",
+          color: "#2a3448",
+        }}
+      >
         {formatRelativeTime(activity.timestamp)}
       </span>
+
+      {/* Type badge */}
       <span
-        className={`px-2 py-0.5 rounded text-[10px] ${config.color} leading-relaxed`}
+        className="text-[8px] tracking-wider px-1.5 py-0.5 rounded shrink-0 min-w-[32px] text-center"
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontWeight: 600,
+          color: config.color,
+          background: `${config.color}15`,
+          border: `1px solid ${config.color}22`,
+        }}
       >
-        {config.icon} {activity.summary}
+        {config.label}
+      </span>
+
+      {/* Content */}
+      <span
+        className="text-[10px] leading-relaxed break-all"
+        style={{
+          fontFamily: "var(--font-mono)",
+          color: "#5a6a82",
+        }}
+      >
+        <span style={{ color: config.color, opacity: 0.5 }}>
+          {config.icon}
+        </span>{" "}
+        {activity.summary}
       </span>
     </div>
   );
