@@ -45,6 +45,7 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
   const worker = getWorkerAppearance(session.id);
   const status = statusConfig[session.status] || statusConfig.waiting;
   const isWorking = session.status === "working";
+  const isWaiting = session.status === "waiting";
   const isIdle = session.status === "idle";
 
   return (
