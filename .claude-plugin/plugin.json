@@ -1,0 +1,10 @@
+{
+  "name": "claude-office",
+  "description": "A pixel-art office dashboard that shows all your active Claude Code sessions as animated workers in office rooms. See who's working, waiting, sleeping, or needs approval — with token costs, git status, error alerts, and desktop notifications.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Younan Nwesre"
+  },
+  "license": "MIT",
+  "keywords": ["dashboard", "sessions", "office", "pixel-art", "monitor", "viewer"]
+}
