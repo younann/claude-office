@@ -199,7 +199,7 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
       }}
     >
       {/* ===== Room Scene ===== */}
-      <div className="relative w-full h-52 overflow-hidden scanlines">
+      <div className="relative w-full h-56 overflow-hidden scanlines">
 
         {/* Wall */}
         <div className="absolute inset-0" style={{
@@ -468,15 +468,16 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
       </div>
 
       {/* ===== Info Bar ===== */}
-      <div className="px-3 py-2.5" style={{
+      <div className="px-4 py-3" style={{
         background: "#12122a",
         borderTop: "4px solid #2e2e5e",
       }}>
-        <div className="flex items-center justify-between mb-1">
+        {/* Row 1: Name + Status */}
+        <div className="flex items-center justify-between mb-2">
           <div>
             <span style={{
               fontFamily: "var(--font-pixel)",
-              fontSize: "7px",
+              fontSize: "10px",
               color: "#e8e8f0",
               letterSpacing: "0.5px",
             }}>
@@ -484,41 +485,42 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
             </span>
             <span style={{
               fontFamily: "var(--font-body)",
-              fontSize: "12px",
-              color: "#606080",
-              marginLeft: "6px",
+              fontSize: "16px",
+              color: "#8888aa",
+              marginLeft: "8px",
             }}>
               {identity.funnyName}
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2" style={{
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-sm" style={{
               background: status.color,
-              boxShadow: `0 0 4px ${status.color}`,
+              boxShadow: `0 0 6px ${status.color}`,
               animation: isWorking ? "status-blink 1s steps(2) infinite" : "none",
             }} />
             <span style={{
               fontFamily: "var(--font-pixel)",
-              fontSize: "6px",
+              fontSize: "8px",
               color: status.color,
+              letterSpacing: "0.5px",
             }}>
               {status.label}
             </span>
           </div>
         </div>
 
-        {/* Stats row: mood + XP bar + errors + cost */}
-        <div className="flex items-center gap-2">
+        {/* Row 2: XP Bar */}
+        <div className="flex items-center gap-2 mb-2">
           <span style={{
             fontFamily: "var(--font-body)",
-            fontSize: "12px",
+            fontSize: "16px",
             color: mood === "happy" ? "#fcd34d" : mood === "stressed" ? "#ff4444" : mood === "tired" ? "#60a5fa" : "#a0a0c0",
           }}>
             {mood === "happy" ? ":)" : mood === "stressed" ? ">.<" : mood === "tired" ? "-_-" : mood === "focused" ? "o_o" : "~_~"}
           </span>
-          <div className="flex-1 h-2 relative" style={{
+          <div className="flex-1 h-3 relative" style={{
             background: "#0f0f23",
-            border: "1px solid #2e2e5e",
+            border: "2px solid #2e2e5e",
           }}>
             <div className="absolute inset-0" style={{
               background: status.color,
@@ -527,42 +529,94 @@ export function OfficeRoom({ session, isSelected, onClick, index }: OfficeRoomPr
               transition: "width 0.5s",
             }} />
           </div>
-
-          {/* Error count badge */}
-          {session.errorCount > 0 && (
-            <span style={{
-              fontFamily: "var(--font-pixel)", fontSize: "5px",
-              color: "#ff4444", background: "#ff444433",
-              padding: "1px 3px",
-            }}>
-              !{session.errorCount}
-            </span>
-          )}
-
-          {/* Cost */}
-          {session.tokenUsage && session.tokenUsage.estimatedCostUsd > 0 && (
-            <span style={{
-              fontFamily: "var(--font-body)", fontSize: "11px",
-              color: session.tokenUsage.estimatedCostUsd > 1 ? "#fbbf24" : "#606080",
-            }}>
-              ${session.tokenUsage.estimatedCostUsd.toFixed(2)}
-            </span>
-          )}
-
           <span style={{
             fontFamily: "var(--font-body)",
-            fontSize: "11px",
-            color: "#606080",
+            fontSize: "15px",
+            color: "#8888aa",
           }}>
             {formatRelativeTime(session.lastActivityAt)}
           </span>
         </div>
 
+        {/* Row 3: Stats chips */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Cost chip */}
+          {session.tokenUsage && session.tokenUsage.estimatedCostUsd > 0 && (
+            <div className="flex items-center gap-1 px-2 py-1" style={{
+              background: session.tokenUsage.estimatedCostUsd > 0.5 ? "#fbbf2422" : "#1e1e3f",
+              border: `2px solid ${session.tokenUsage.estimatedCostUsd > 0.5 ? "#fbbf2444" : "#2e2e5e"}`,
+            }}>
+              <span style={{ fontFamily: "var(--font-pixel)", fontSize: "7px", color: "#fbbf24" }}>
+                ${session.tokenUsage.estimatedCostUsd.toFixed(2)}
+              </span>
+            </div>
+          )}
+
+          {/* Tokens chip */}
+          {session.tokenUsage && session.tokenUsage.totalTokens > 0 && (
+            <div className="flex items-center gap-1 px-2 py-1" style={{
+              background: "#1e1e3f",
+              border: "2px solid #2e2e5e",
+            }}>
+              <span style={{ fontFamily: "var(--font-pixel)", fontSize: "7px", color: "#a78bfa" }}>
+                {Math.round(session.tokenUsage.totalTokens / 1000)}K TKN
+              </span>
+            </div>
+          )}
+
+          {/* Tool calls chip */}
+          {session.toolCallCount > 0 && (
+            <div className="flex items-center gap-1 px-2 py-1" style={{
+              background: "#1e1e3f",
+              border: "2px solid #2e2e5e",
+            }}>
+              <span style={{ fontFamily: "var(--font-pixel)", fontSize: "7px", color: "#34d399" }}>
+                {session.toolCallCount} TOOLS
+              </span>
+            </div>
+          )}
+
+          {/* Error chip */}
+          {session.errorCount > 0 && (
+            <div className="flex items-center gap-1 px-2 py-1" style={{
+              background: "#ff444422",
+              border: "2px solid #ff444444",
+              animation: "status-blink 2s steps(2) infinite",
+            }}>
+              <span style={{ fontFamily: "var(--font-pixel)", fontSize: "7px", color: "#ff4444" }}>
+                {session.errorCount} ERR
+              </span>
+            </div>
+          )}
+
+          {/* Git chip */}
+          {session.gitInfo && session.gitInfo.branch && (
+            <div className="flex items-center gap-1 px-2 py-1" style={{
+              background: "#1e1e3f",
+              border: "2px solid #2e2e5e",
+            }}>
+              <span style={{ fontFamily: "var(--font-pixel)", fontSize: "7px", color: "#7c3aed" }}>
+                {session.gitInfo.branch.length > 12
+                  ? session.gitInfo.branch.slice(0, 12) + ".."
+                  : session.gitInfo.branch}
+              </span>
+              {session.gitInfo.uncommittedChanges > 0 && (
+                <span style={{ fontFamily: "var(--font-pixel)", fontSize: "7px", color: "#fbbf24" }}>
+                  +{session.gitInfo.uncommittedChanges}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Notes indicator */}
         {session.notes && session.notes.length > 0 && (
-          <div className="mt-1 flex items-center gap-1">
-            <span style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "#fcd34d" }}>
-              {session.notes[session.notes.length - 1].text.slice(0, 40)}{session.notes[session.notes.length - 1].text.length > 40 ? "..." : ""}
+          <div className="mt-2 px-2 py-1" style={{
+            background: "#fcd34d11",
+            border: "1px solid #fcd34d33",
+          }}>
+            <span style={{ fontFamily: "var(--font-body)", fontSize: "14px", color: "#fcd34d" }}>
+              📌 {session.notes[session.notes.length - 1].text.slice(0, 50)}{session.notes[session.notes.length - 1].text.length > 50 ? "..." : ""}
             </span>
           </div>
         )}
