@@ -12,7 +12,9 @@ function App() {
     statusCounts,
     lastUpdated,
     isLoading,
+    notificationsEnabled,
     selectSession,
+    setNotificationsEnabled,
     refresh,
   } = useSessions();
 
@@ -97,6 +99,25 @@ function App() {
               {formatRelativeTime(lastUpdated.toISOString())}
             </span>
           </div>
+
+          {/* Notification toggle */}
+          <button
+            onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+            className="cursor-pointer transition-transform duration-100 active:translate-y-0.5"
+            style={{
+              fontFamily: "var(--font-pixel)",
+              fontSize: "7px",
+              color: notificationsEnabled ? "#fcd34d" : "#606080",
+              background: notificationsEnabled ? "#fcd34d22" : "#1a1a2e",
+              padding: "8px 12px",
+              border: `2px solid ${notificationsEnabled ? "#fcd34d44" : "#2e2e5e"}`,
+              letterSpacing: "0.5px",
+              boxShadow: "3px 3px 0 #0a0a1a",
+            }}
+            title={notificationsEnabled ? "Notifications ON — click to disable" : "Notifications OFF — click to enable"}
+          >
+            {notificationsEnabled ? "ALERTS ON" : "ALERTS OFF"}
+          </button>
 
           <button
             onClick={refresh}

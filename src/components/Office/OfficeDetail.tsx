@@ -315,15 +315,20 @@ export function OfficeDetail({ session, onClose, onRefresh }: OfficeDetailProps)
                 <button
                   onClick={handleAddNote}
                   disabled={isSaving || !noteText.trim()}
-                  className="cursor-pointer"
+                  className="cursor-pointer relative"
                   style={{
-                    fontFamily: "var(--font-pixel)", fontSize: "7px",
-                    color: "#fff", background: "#7c3aed", padding: "8px 12px", border: "none",
-                    boxShadow: "inset -2px -2px 0 #5b2db8, inset 2px 2px 0 #9d5cf5",
-                    opacity: !noteText.trim() ? 0.5 : 1,
+                    fontFamily: "var(--font-pixel)", fontSize: "8px",
+                    color: "#fff", background: isSaving ? "#5b2db8" : "#7c3aed",
+                    padding: "8px 16px", border: "none",
+                    boxShadow: isSaving ? "none" : "inset -2px -2px 0 #5b2db8, inset 2px 2px 0 #9d5cf5, 3px 3px 0 #0a0a1a",
+                    opacity: !noteText.trim() ? 0.4 : 1,
+                    transition: "all 0.15s",
+                    transform: isSaving ? "translateY(2px)" : "none",
                   }}
                 >
-                  {isSaving ? "..." : "ADD"}
+                  {isSaving ? (
+                    <span style={{ animation: "status-blink 0.5s steps(2) infinite" }}>SAVING..</span>
+                  ) : "ADD"}
                 </button>
               </div>
 
