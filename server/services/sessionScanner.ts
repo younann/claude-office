@@ -19,22 +19,49 @@ const CACHE_TTL_MS = 2000;
 let cachedSessions: Session[] = [];
 let lastScanTime = 0;
 
+// Convert a filesystem path to the Claude project dir name encoding
+// "/Users/younan.nwesre/Desktop/personal/viewer" → "-Users-younan-nwesre-Desktop-personal-viewer"
+function cwdToProjectDirName(cwd: string): string {
+  return cwd.replace(/[/.]/g, "-");
+}
+
 export async function getAllSessions(): Promise<Session[]> {
   const now = Date.now();
   if (now - lastScanTime < CACHE_TTL_MS && cachedSessions.length > 0) {
     return cachedSessions;
   }
 
-  const [projectDirs, aliveProcessCwds] = await Promise.all([
-    listProjectDirs(),
-    detectAliveProcesses(),
-  ]);
+  const aliveCwds = await detectAliveProcesses();
 
+  if (aliveCwds.size === 0) {
+    cachedSessions = [];
+    lastScanTime = now;
+    return [];
+  }
+
+  // Map alive CWDs to their expected project dir names
+  // Then only scan those specific project dirs
   const sessions: Session[] = [];
 
-  for (const projectDir of projectDirs) {
-    const projectSessions = await scanProjectDir(projectDir, aliveProcessCwds);
-    sessions.push(...projectSessions);
+  for (const aliveCwd of aliveCwds) {
+    const dirName = cwdToProjectDirName(aliveCwd);
+    const projectDir = join(CLAUDE_PROJECTS_DIR, dirName);
+    const projectSessions = await scanProjectDir(projectDir);
+
+    // Only keep the most recent session from this project dir
+    // (there may be multiple old session files)
+    if (projectSessions.length > 0) {
+      projectSessions.sort(
+        (a, b) =>
+          new Date(b.lastActivityAt).getTime() -
+          new Date(a.lastActivityAt).getTime()
+      );
+      // Mark the most recent as active, set its projectPath to the real CWD
+      const latest = projectSessions[0];
+      latest.projectPath = aliveCwd;
+      latest.status = deriveActiveStatus(latest);
+      sessions.push(latest);
+    }
   }
 
   // Sort by lastActivityAt descending
@@ -47,6 +74,28 @@ export async function getAllSessions(): Promise<Session[]> {
   cachedSessions = sessions;
   lastScanTime = now;
   return sessions;
+}
+
+function deriveActiveStatus(session: Session): SessionStatus {
+  const lastActivityTime = session.lastActivityAt
+    ? new Date(session.lastActivityAt).getTime()
+    : 0;
+  const timeSinceActivity = Date.now() - lastActivityTime;
+
+  if (timeSinceActivity > IDLE_THRESHOLD_MS) {
+    return "idle";
+  }
+
+  // Check last activity type from recentActivity
+  const lastActivity = session.recentActivity[session.recentActivity.length - 1];
+  if (
+    lastActivity &&
+    (lastActivity.type === "tool_call" || lastActivity.type === "tool_result")
+  ) {
+    return "working";
+  }
+
+  return "waiting";
 }
 
 export async function getSessionById(id: string): Promise<Session | null> {
@@ -75,17 +124,19 @@ async function detectAliveProcesses(): Promise<Set<string>> {
     const claudePids: string[] = [];
 
     for (const line of lines) {
-      // Match lines where the command is "claude" (CLI process)
-      // Avoid matching grep itself or Claude.app (desktop)
+      // Match lines where the command ends with "claude" (CLI process)
+      // Exclude: grep, Claude.app, helpers, shells running claude commands
+      const trimmed = line.trim();
       if (
-        /\bclaude\s*$/.test(line.trim()) ||
-        (/\bclaude\b/.test(line) &&
-          !/grep/.test(line) &&
-          !/Claude\.app/.test(line) &&
-          !/Claude Helper/.test(line) &&
-          !/ShipIt/.test(line))
+        /\bclaude\s*$/.test(trimmed) &&
+        !/grep/.test(trimmed) &&
+        !/Claude\.app/.test(trimmed) &&
+        !/Claude Helper/.test(trimmed) &&
+        !/ShipIt/.test(trimmed) &&
+        !/chrome-native/.test(trimmed) &&
+        !/\/bin\/(ba)?sh/.test(trimmed)
       ) {
-        const parts = line.trim().split(/\s+/);
+        const parts = trimmed.split(/\s+/);
         const pid = parts[1];
         if (pid && /^\d+$/.test(pid)) {
           claudePids.push(pid);
@@ -94,14 +145,20 @@ async function detectAliveProcesses(): Promise<Set<string>> {
     }
 
     // Use lsof to find CWDs for all claude PIDs
+    // lsof -Fn output format: "fcwd\n" followed by "n/path/to/cwd\n"
     for (const pid of claudePids) {
       try {
         const { stdout: lsofOut } = await execAsync(
-          `lsof -p ${pid} -Fn 2>/dev/null | grep "^n" | grep cwd`
+          `lsof -p ${pid} -Fn 2>/dev/null`
         );
-        const cwdMatch = lsofOut.match(/^n(.+)$/m);
-        if (cwdMatch) {
-          cwds.add(cwdMatch[1]);
+        const lsofLines = lsofOut.split("\n");
+        for (let i = 0; i < lsofLines.length; i++) {
+          if (lsofLines[i] === "fcwd" && i + 1 < lsofLines.length) {
+            const pathLine = lsofLines[i + 1];
+            if (pathLine.startsWith("n")) {
+              cwds.add(pathLine.slice(1));
+            }
+          }
         }
       } catch {
         // lsof failed for this pid, skip
@@ -114,8 +171,7 @@ async function detectAliveProcesses(): Promise<Set<string>> {
 }
 
 async function scanProjectDir(
-  projectDir: string,
-  aliveCwds: Set<string>
+  projectDir: string
 ): Promise<Session[]> {
   const sessions: Session[] = [];
   try {
@@ -124,11 +180,7 @@ async function scanProjectDir(
 
     for (const file of jsonlFiles) {
       const filePath = join(projectDir, file);
-      const session = await parseSessionFile(
-        filePath,
-        projectDir,
-        aliveCwds
-      );
+      const session = await parseSessionFile(filePath, projectDir);
       if (session) {
         sessions.push(session);
       }
@@ -141,8 +193,7 @@ async function scanProjectDir(
 
 async function parseSessionFile(
   filePath: string,
-  projectDir: string,
-  aliveCwds: Set<string>
+  projectDir: string
 ): Promise<Session | null> {
   try {
     const entries = await tailReadJsonl(filePath);
@@ -263,27 +314,8 @@ async function parseSessionFile(
     const project =
       segments.length > 0 ? segments[segments.length - 1] : dirName;
 
-    // Determine status
-    const isAlive = aliveCwds.has(cwd);
-    let status: SessionStatus;
-    if (!isAlive) {
-      status = "stopped";
-    } else {
-      const lastActivityTime = lastTimestamp
-        ? new Date(lastTimestamp).getTime()
-        : 0;
-      const timeSinceActivity = Date.now() - lastActivityTime;
-      if (timeSinceActivity > IDLE_THRESHOLD_MS) {
-        status = "idle";
-      } else if (
-        lastEntryType === "tool_call" ||
-        lastEntryType === "tool_result"
-      ) {
-        status = "working";
-      } else {
-        status = "waiting";
-      }
-    }
+    // Status will be set by the caller (getAllSessions) based on process detection
+    const status: SessionStatus = "waiting";
 
     return {
       id: sessionId,

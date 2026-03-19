@@ -25,11 +25,6 @@ const filters = [
     color: "bg-status-waiting/20 text-status-waiting",
   },
   { key: "idle", label: "Idle", color: "bg-status-idle/20 text-status-idle" },
-  {
-    key: "stopped",
-    label: "Stopped",
-    color: "bg-status-stopped/20 text-status-stopped",
-  },
 ];
 
 export function StatusFilter({
