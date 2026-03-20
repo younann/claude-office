@@ -1,13 +1,13 @@
 {
   "name": "Claude Office Plugins",
   "description": "Pixel-art office dashboard for monitoring Claude Code sessions",
-  "owner": "younan-nwesre",
+  "owner": "younann",
   "plugins": [
     {
       "name": "claude-office",
       "description": "A pixel-art office dashboard that shows all your active Claude Code sessions as animated workers in office rooms",
       "version": "1.0.0",
-      "source": "https://github.com/younan-nwesre/claude-office"
+      "source": "https://github.com/younann/claude-office"
     }
   ]
 }

@@ -154,41 +154,55 @@ The CHAT tab shows the last 10 messages as chat bubbles — your messages on the
 
 ## Installation
 
-### As a Claude Code Plugin
+### Method 1: Claude Code Plugin Marketplace (Recommended)
 
 ```bash
-# Clone the repo
-git clone https://github.com/younan-nwesre/claude-office.git
+# Inside Claude Code, run:
+/plugin marketplace add younann/claude-office
+/plugin install claude-office
+/reload-plugins
+```
 
-# Install dependencies
-cd claude-office
-npm install
-cd server && npm install && cd ..
+That's it. The dashboard auto-starts on every new session.
 
-# Load as a plugin
+### Method 2: Direct Plugin Install
+
+```bash
+# Clone
+git clone https://github.com/younann/claude-office.git
+cd claude-office && npm install && cd server && npm install && cd ..
+
+# Start Claude Code with the plugin
 claude --plugin-dir /path/to/claude-office
 ```
 
-After installation:
-- The dashboard **auto-starts** on every new Claude session (via SessionStart hook)
-- Type `/claude-office:office` to open it in your browser
-- Type `/claude-office:office-stop` to shut it down
-
-### Standalone (without plugin)
+### Method 3: Load from Inside Claude Code
 
 ```bash
-git clone https://github.com/younan-nwesre/claude-office.git
-cd claude-office
+# Inside any Claude Code session:
+/plugin install https://github.com/younann/claude-office
+/reload-plugins
+```
 
-# Install
-npm install
-cd server && npm install && cd ..
+### Method 4: Standalone (no plugin, just the dashboard)
 
-# Run
+```bash
+git clone https://github.com/younann/claude-office.git
+cd claude-office && npm install && cd server && npm install && cd ..
+
+# Run both servers
 npx concurrently "cd server && npx tsx index.ts" "npx vite --host"
 
 # Open http://localhost:5173
 ```
+
+### After Installation
+
+| Command | What it does |
+|---------|-------------|
+| `/claude-office:office` | Open the dashboard in your browser |
+| `/claude-office:office-stop` | Shut down the dashboard servers |
+| *Automatic* | Dashboard auto-starts on every new session via hook |
 
 ---
 
