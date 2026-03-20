@@ -322,6 +322,8 @@ MIT
 
 <div align="center">
 
+**Created by [Younan Nwesre](https://github.com/younan-nwesre)**
+
 **Built with Claude Code.**
 
 *Because even AI agents deserve a nice office.*
